@@ -42,3 +42,46 @@ jobs:
 
       - name: Terraform Validate
         run: terraform validate
+
+  plan:
+    name: Terraform Plan
+    if: github.event_name == 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: dev
+
+    permissions:
+      contents: read
+      id-token: write
+
+    defaults:
+      run:
+        working-directory: modul7
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.5"
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        run: terraform init -backend-config=backend.hcl -backend-config="key=modul7/dev/network.tfstate" -lockfile=readonly
+        env:
+          ARM_USE_AZUREAD: "true"
+          ARM_USE_CLI: "true"
+
+      - name: Terraform Plan
+        run: terraform plan -var-file=dev.tfvars -input=false -no-color
+        env:
+          ARM_USE_CLI: "true"
+          ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
