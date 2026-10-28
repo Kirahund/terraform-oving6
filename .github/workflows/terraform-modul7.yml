@@ -95,7 +95,7 @@ jobs:
   
   apply-dev:
     name: Terraform Apply Dev
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     environment: dev
@@ -135,3 +135,50 @@ jobs:
         env:
           ARM_USE_CLI: "true"
           ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+
+  apply-prod:
+    name: Terraform Apply Prod
+    if: ${{ false }} # Midlertidig deaktivert
+    needs: apply-dev
+    runs-on: ubuntu-latest
+    environment: prod
+
+    permissions:
+      contents: read
+      id-token: write
+
+    defaults:
+      run:
+        working-directory: modul7
+
+    concurrency:
+      group: terraform-modul7-prod
+      cancel-in-progress: false
+
+    env:
+      ARM_USE_AZUREAD: "true"
+      ARM_USE_CLI: "true"
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.5"
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init Prod
+        run: terraform init -backend-config=backend.hcl -backend-config="key=modul7/prod/network.tfstate"
+
+      - name: Terraform Apply Prod
+        run: terraform apply -var-file=prod.tfvars -input=false -auto-approve
