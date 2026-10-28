@@ -1,0 +1,81 @@
+name: deploy-modul8
+
+on:
+  push:
+    tags:
+      - 'modul8-v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-modul8-dev
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: modul8
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.5"
+
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        run: terraform init -backend=false -lockfile=readonly
+
+      - name: Terraform Validate
+        run: terraform validate
+
+  deploy-dev:
+    name: deploy-dev
+    needs: build
+    runs-on: ubuntu-latest
+    environment: dev
+
+    permissions:
+      contents: read
+      id-token: write
+
+    defaults:
+      run:
+        working-directory: modul8
+
+    env:
+      ARM_USE_AZUREAD: "true"
+      ARM_USE_CLI: "true"
+      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.16.5"
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init Dev
+        run: terraform init -backend-config=backend.hcl -backend-config="key=modul8/dev/network.tfstate" -lockfile=readonly -input=false
+
+      - name: Terraform Apply Dev
+        run: terraform apply -var-file=dev.tfvars -input=false -auto-approve
