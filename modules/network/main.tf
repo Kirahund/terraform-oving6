@@ -11,3 +11,10 @@ resource "azurerm_subnet" "main" {
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = ["10.10.1.0/24"]
 }
+
+resource "azurerm_subnet" "data" {
+  name                 = "${var.project}-data-subnet"
+  resource_group_name  = var.resource_group_name
+  virtual_network_name = azurerm_virtual_network.main.name
+  address_prefixes     = ["10.10.2.0/24"]
+}
