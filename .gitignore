@@ -11,3 +11,4 @@ crash.*.log
 **/*.auto.tfvars
 **/*.tfplan
 **/backend.hcl
+!modul7/backend.hcl
