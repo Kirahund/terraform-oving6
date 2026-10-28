@@ -92,7 +92,7 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
           
-  
+    # Test av automatisk apply-dev etter merge
   apply-dev:
     name: Terraform Apply Dev
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
