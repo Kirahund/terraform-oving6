@@ -33,6 +33,9 @@ jobs:
       - name: Terraform Format
         run: terraform fmt -check
 
+      - name: Configure public Git access
+        run: git config --global --unset-all credential.helper || true
+
       - name: Terraform Init
         run: terraform init -backend=false -lockfile=readonly
 
@@ -74,8 +77,12 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Configure public Git access
+        run: git config --global --unset-all credential.helper || true
+
       - name: Terraform Init Dev
         run: terraform init -backend-config=backend.hcl -backend-config="key=modul8/dev/network.tfstate" -lockfile=readonly -input=false
 
       - name: Terraform Apply Dev
         run: terraform apply -var-file=dev.tfvars -input=false -auto-approve
+
