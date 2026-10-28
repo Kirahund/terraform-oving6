@@ -41,4 +41,5 @@ module "network" {
   location            = var.location
   resource_group_name = azurerm_resource_group.main.name
 }
+# Terraform format test completed
 
