@@ -12,3 +12,4 @@ crash.*.log
 **/*.tfplan
 **/backend.hcl
 !modul7/backend.hcl
+/modules/network/.terraform.lock.hcl
